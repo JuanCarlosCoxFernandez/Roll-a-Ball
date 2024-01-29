@@ -8,6 +8,9 @@ using TMPro;
 public class PlayerController : MonoBehaviour
 {
     public float speed = 0;
+    public float hop;
+    public Transform respawnPoint;
+    public MenuController menuController;
 
     private Rigidbody rb;
     private float movementX;
@@ -15,11 +18,13 @@ public class PlayerController : MonoBehaviour
 
     private int count;
     public TextMeshProUGUI countText;
-    public GameObject winTextObject;
+
+
 
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Start script");
         rb = GetComponent<Rigidbody>();
 
         // Initialize count to zero.
@@ -28,13 +33,21 @@ public class PlayerController : MonoBehaviour
         // Update the count display.
         SetCountText();
 
-        // Initially set the win text to be inactive.
-        winTextObject.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if(transform.position.y < -10)
+        {
+            //Respawn();
+            EndGame();
+        }
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
+        Debug.Log("FixedUpdate script");
         Vector3 movement = new Vector3(movementX, 0.0f, movementY);
 
         rb.AddForce(movement * speed);
@@ -42,9 +55,16 @@ public class PlayerController : MonoBehaviour
 
     void OnMove(InputValue movementValue)
     {
+        Debug.Log("OnMove script");
         Vector2 movement = movementValue.Get<Vector2>();
         movementX = movement.x;
         movementY = movement.y;
+    }
+
+    void OnJump(InputValue jumpValue)
+    {
+        // Debug.Log(jumpValue);
+        rb.AddForce(Vector3.up * hop, ForceMode.Impulse);
     }
 
     void OnTriggerEnter(Collider other)
@@ -63,6 +83,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            Respawn();
+        }
+    }
+
     void SetCountText()
     {
         // Update the count text with the current count.
@@ -72,7 +100,23 @@ public class PlayerController : MonoBehaviour
         if (count >= 3)
         {
             // Display the win text.
-            winTextObject.SetActive(true);
+            //winTextObject.SetActive(true);
+            menuController.WinGame();
         }
     }
+
+    void Respawn()
+    {
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.Sleep();
+        transform.position = respawnPoint.position;
+    }
+
+    void EndGame()
+    {
+        menuController.LoseGame();
+        gameObject.SetActive(false);
+    }
+
 }
